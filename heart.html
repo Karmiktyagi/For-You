@@ -1,0 +1,187 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart Animation ❤️</title>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        background: black;
+        overflow: hidden;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    canvas {
+        display: block;
+        background: black;
+    }
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const POINTS = 320;
+const SEGMENTS = 10;
+
+// Same delay as Python's time.sleep(0.22)
+const DELAY = 10;
+
+// Generate random lengths for the heart
+const randomLengths = Array.from(
+    { length: POINTS },
+    () => 0.15 + Math.random() * 0.35
+);
+
+let width, height, scale;
+let pointIndex = 0;
+let segmentIndex = 0;
+let animationTimer;
+let drawing = false;
+
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    scale = Math.min(width / 600, height / 560);
+
+    if (!drawing) {
+        clearCanvas();
+    }
+}
+
+function clearCanvas() {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, width, height);
+}
+
+function drawSegment(i, j) {
+    const a = 2 * Math.PI * i / POINTS;
+
+    const xo = 16 * Math.pow(Math.sin(a), 3) * 16;
+
+    const yo = (
+        13 * Math.cos(a)
+        - 5 * Math.cos(2 * a)
+        - 2 * Math.cos(3 * a)
+        - Math.cos(4 * a)
+    ) * 16;
+
+    const L = randomLengths[i];
+
+    const xi = xo * (1 - L);
+    const yi = yo * (1 - L);
+
+    const f = j / 10;
+
+    // Original Python RGB gradient
+    const red = 1 - 0.6 * f;
+    const green = 0.7 * (1 - f);
+    const blue = 0.8 * (1 - f);
+
+    ctx.strokeStyle = `rgb(
+        ${Math.round(red * 255)},
+        ${Math.round(green * 255)},
+        ${Math.round(blue * 255)}
+    )`;
+
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = "butt";
+
+    const x1 = xo + (xi - xo) * f;
+    const y1 = yo + (yi - yo) * f;
+
+    const x2 = xo + (xi - xo) * (f + 0.1);
+    const y2 = yo + (yi - yo) * (f + 0.1);
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+}
+
+function drawNextSegment() {
+    if (pointIndex >= POINTS) {
+        drawing = false;
+        return;
+    }
+
+    // Position the heart in the center
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(scale, -scale);
+
+    drawSegment(pointIndex, segmentIndex);
+
+    ctx.restore();
+
+    // Move to the next segment
+    segmentIndex++;
+
+    if (segmentIndex >= SEGMENTS) {
+        segmentIndex = 0;
+        pointIndex++;
+    }
+
+    // Draw the next segment after 220 milliseconds
+    animationTimer = setTimeout(drawNextSegment, DELAY);
+}
+
+function startAnimation() {
+    clearTimeout(animationTimer);
+
+    pointIndex = 0;
+    segmentIndex = 0;
+
+    clearCanvas();
+
+    drawing = true;
+    drawNextSegment();
+}
+
+window.addEventListener("resize", () => {
+    resizeCanvas();
+
+    // Restart cleanly if the screen size changes
+    if (drawing) {
+        startAnimation();
+    }
+});
+
+resizeCanvas();
+startAnimation();
+</script>
+
+</body>
+</html>
+```
